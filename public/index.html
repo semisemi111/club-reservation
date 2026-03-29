@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>동아리방 예약</title>
+
+<style>
+body {
+  font-family: Arial;
+  text-align: center;
+}
+
+table {
+  border-collapse: collapse;
+  margin: 20px auto;
+}
+
+td, th {
+  border: 1px solid #ccc;
+  padding: 10px;
+  width: 100px;
+  height: 50px;
+  cursor: pointer;
+}
+
+.free {
+  background-color: #e0ffe0;
+}
+
+.reserved {
+  background-color: #ffb3b3;
+  cursor: not-allowed;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>📅 동아리방 예약</h1>
+
+<input id="club" placeholder="동아리명 입력">
+
+<h2 id="dateTitle"></h2>
+
+<table id="timetable"></table>
+
+<script>
+const API = "";
+const date = new Date().toISOString().slice(0,10);
+document.getElementById("dateTitle").innerText = date;
+
+const times = [
+  "09:00","10:00","11:00","12:00",
+  "13:00","14:00","15:00","16:00",
+  "17:00","18:00","19:00","20:00"
+];
+
+// 시간표 생성
+function createTable(reservations) {
+  const table = document.getElementById("timetable");
+  table.innerHTML = "";
+
+  const row = document.createElement("tr");
+
+  times.forEach(time => {
+    const td = document.createElement("td");
+
+    const reserved = reservations.find(r => r.time === time && r.date === date);
+
+    td.innerText = time;
+
+    if (reserved) {
+      td.className = "reserved";
+      td.innerText += "\n" + reserved.club;
+    } else {
+      td.className = "free";
+      td.onclick = () => reserve(time);
+    }
+
+    row.appendChild(td);
+  });
+
+  table.appendChild(row);
+}
+
+// 예약 요청
+function reserve(time) {
+  const club = document.getElementById("club").value;
+
+  if (!club) {
+    alert("동아리명 입력");
+    return;
+  }
+
+  fetch(API + "/reserve", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      club,
+      date,
+      time
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    alert(data.message || "예약 완료");
+    load();
+  });
+}
+
+// 데이터 불러오기
+function load() {
+  fetch(API + "/reservations")
+  .then(res => res.json())
+  .then(data => createTable(data));
+}
+
+load();
+</script>
+
+</body>
+</html>
